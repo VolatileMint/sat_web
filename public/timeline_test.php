@@ -66,10 +66,8 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
   <div style="margin: 1em 0;">
     <input type="file" accept="image/*" name="image[]" multiple id="imageInput">
   </div>
-  <div id="test">
-	<!--<input id="imageBase64Input" name="image_base64[]"><!-- base64を送る用のinput (非表示) -->
-  </div>
-  <canvas id="imageCanvas" ></canvas><!-- 画像縮小に使うcanvas (非表示) -->
+  <div id="test"></div><!-- base64を送る用のinput (非表示) -->
+  <canvas id="imageCanvas" style="display: none;"></canvas><!-- 画像縮小に使うcanvas (非表示) -->
   <button type="submit">送信</button>
 </form>
 <hr>
@@ -115,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
       entryCopied.querySelector('[data-role="entryIdArea"]').innerText = entry.id.toString();
 
       // アイコン画像が存在する場合は表示 なければimg要素ごと非表示に
-      if (entry.user_icon_file_url.length > 0) {
+	  if (entry.user_icon_file_url.length > 0) {
         entryCopied.querySelector('[data-role="entryUserIconImage"]').src = entry.user_icon_file_url;
       } else {
         entryCopied.querySelector('[data-role="entryUserIconImage"]').display = 'none';
@@ -135,13 +133,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 画像が存在する場合に本文の下部に画像を表示
       if (entry.image_file_url.length > 0) {
-        const imageElement = new Image();
-        imageElement.src = entry.image_file_url; // 画像URLを設定
-        imageElement.style.display = 'block'; // ブロック要素にする (img要素はデフォルトではインライン要素のため)
-        imageElement.style.marginTop = '1em'; // 画像上部の余白を設定
-        imageElement.style.maxHeight = '300px'; // 画像を表示する最大サイズ(縦)を設定
-        imageElement.style.maxWidth = '300px'; // 画像を表示する最大サイズ(横)を設定
-        entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement); // 本文エリアに画像を追加
+		console.log(entry.image_file_url)
+		for(let i = 0; i < entry.image_file_url.length; i++){
+			const imageElement = new Image();
+			imageElement.src = entry.image_file_url[i]; // 画像URLを設定
+			imageElement.style.display = 'block'; // ブロック要素にする (img要素はデフォルトではインライン要素のため)
+			imageElement.style.marginTop = '1em'; // 画像上部の余白を設定
+			imageElement.style.maxHeight = '300px'; // 画像を表示する最大サイズ(縦)を設定
+			imageElement.style.maxWidth = '300px'; // 画像を表示する最大サイズ(横)を設定
+			entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement); // 本文エリアに画像を追加
+		}
       }
 
       // 最後に実際の描画を行う
@@ -173,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		const test = document.getElementById("test"); // input追加用
 		var newInput = document.createElement("input"); // input要素作成
 		newInput.setAttribute("name", "image_base64[]");
-		//newInput.setAttribute("type", "hidden");
+		newInput.setAttribute("type", "hidden");
 		newInput.multiple = true;
 		newInput.setAttribute('id', 'img' + i);
 		test.insertBefore(newInput, test.firstChild);

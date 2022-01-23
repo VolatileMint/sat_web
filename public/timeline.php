@@ -66,7 +66,7 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
     <input type="file" accept="image/*" name="image" id="imageInput">
   </div>
   <input id="imageBase64Input" name="image_base64"><!-- base64を送る用のinput (非表示) -->
-  <canvas id="imageCanvas" ></canvas><!-- 画像縮小に使うcanvas (非表示) -->
+  <canvas id="imageCanvas" style="display: none;"></canvas><!-- 画像縮小に使うcanvas (非表示) -->
   <button type="submit">送信</button>
 </form>
 <hr>
