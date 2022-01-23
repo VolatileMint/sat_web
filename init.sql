@@ -28,3 +28,9 @@ CREATE TABLE `bbs_entries` (
     `image_filename` TEXT DEFAULT NULL,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE `bbs_images` (
+    `id` INT NOT NULL,
+    `image_filename` TEXT DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+);

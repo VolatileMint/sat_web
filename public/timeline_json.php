@@ -24,6 +24,27 @@ $select_sth = $dbh->prepare($sql);
 $select_sth->execute([
   ':login_user_id' => $_SESSION['login_user_id'],
 ]);
+$list = $select_sth->fetchAll(\PDO::FETCH_ASSOC);
+//
+$sql = 'SELECT image_filename FROM bbs_images 
+		WHERE id = :id';
+$select_img = $dbh->prepare($sql);
+
+foreach($list as $k => $v){
+	$select_img->execute([':id' => $v['id'],]);
+	$datum = $select_img->fetchAll(PDO::FETCH_ASSOC); //PDO::FETCH_ASSOC(重複表示を省く);
+	if(false === $datum){
+		return null;
+	}
+	$image = array_column($datum, 'image_filename');
+	$data = [];
+	foreach($image as $i){
+		$data[] = '/image/' . $i;
+	}
+	$v['images'] = $data;
+	$list[$k] = $v;
+}
+//var_dump($list);
 // bodyのHTMLを出力するための関数を用意する
 function bodyFilter (string $body): string
 {
@@ -36,14 +57,14 @@ function bodyFilter (string $body): string
 }
 // JSONに吐き出す用のentries
 $result_entries = [];
-foreach ($select_sth as $entry) {
+foreach ($list as $entry) {
   $result_entry = [
     'id' => $entry['id'],
     'user_name' => $entry['user_name'],
     'user_icon_file_url' => empty($entry['user_icon_filename']) ? '' : ('/image/' . $entry['user_icon_filename']),
     'user_profile_url' => '/profile.php?user_id=' . $entry['user_id'],
     'body' => bodyFilter($entry['body']),
-    'image_file_url' => empty($entry['image_filename']) ? '' : ('/image/' . $entry['image_filename']),
+    'image_file_url' => $entry['images'],
     'created_at' => $entry['created_at'],
   ];
   $result_entries[] = $result_entry;
