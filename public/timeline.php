@@ -24,28 +24,29 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
       ':user_id' => $_SESSION['login_user_id'], // ログインしている会員情報の主キー
       ':body' => $_POST['body'], // フォームから送られてきた投稿本文
   ]);
+  $last_id = $dbh->lastInsertId();
   if (!empty($_POST['image_base64'])) { //画像があった場合
-    // 先頭の data:~base64, のところは削る
-    $base64 = preg_replace('/^data:.+base64,/', '', $_POST['image_base64']);
-	// base64からバイナリにデコードする
-    $image_binary = base64_decode($base64);
+	foreach($_POST['image_base64'] as $k){
+		// 先頭の data:~base64, のところは削る
+		$base64 = preg_replace('/^data:.+base64,/', '', $k);
+		// base64からバイナリにデコードする
+		$image_binary = base64_decode($base64);
 
-    // 新しいファイル名を決めてバイナリを出力する
-    $image_filename = strval(time()) . bin2hex(random_bytes(25)) . '.png';
-    $filepath =  '/var/www/public/image/' . $image_filename;
-    file_put_contents($filepath, $image_binary);
-	$last_id = $dbh->lastInsertId();
-	$insert_sth = $dbh->prepare("INSERT INTO bbs_images (id, image_filename) VALUES (:id, :image_filename)");
-	$insert_sth->execute([
-		':id' => $last_id, // 
-		':image_filename' => $image_filename, 
-	  ]);
-	}
-  
+		// 新しいファイル名を決めてバイナリを出力する
+		$image_filename = strval(time()) . bin2hex(random_bytes(25)) . '.png';
+		$filepath =  '/var/www/public/image/' . $image_filename;
+		file_put_contents($filepath, $image_binary);
+		$insert_sth = $dbh->prepare("INSERT INTO bbs_images (id, image_filename) VALUES (:id, :image_filename)");
+		$insert_sth->execute([
+			':id' => $last_id, // 
+			':image_filename' => $image_filename, 
+		  ]);
+		}
+  }
   // 処理が終わったらリダイレクトする
   // リダイレクトしないと，リロード時にまた同じ内容でPOSTすることになる
   header("HTTP/1.1 302 Found");
-  header("Location: ./timeline.php");
+  header("Location: ./timeline_test.php");
   return;
 }
 ?>
@@ -63,9 +64,9 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
 <form method="POST" action="./timeline_test.php"><!-- enctypeは外しておきましょう -->
   <textarea name="body" required></textarea>
   <div style="margin: 1em 0;">
-    <input type="file" accept="image/*" name="image" id="imageInput">
+    <input type="file" accept="image/*" name="image[]" multiple id="imageInput">
   </div>
-  <input id="imageBase64Input" name="image_base64"><!-- base64を送る用のinput (非表示) -->
+  <div id="test"></div><!-- base64を送る用のinput (非表示) -->
   <canvas id="imageCanvas" style="display: none;"></canvas><!-- 画像縮小に使うcanvas (非表示) -->
   <button type="submit">送信</button>
 </form>
@@ -112,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
       entryCopied.querySelector('[data-role="entryIdArea"]').innerText = entry.id.toString();
 
       // アイコン画像が存在する場合は表示 なければimg要素ごと非表示に
-      if (entry.user_icon_file_url.length > 0) {
+	  if (entry.user_icon_file_url.length > 0) {
         entryCopied.querySelector('[data-role="entryUserIconImage"]').src = entry.user_icon_file_url;
       } else {
         entryCopied.querySelector('[data-role="entryUserIconImage"]').display = 'none';
@@ -132,13 +133,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 画像が存在する場合に本文の下部に画像を表示
       if (entry.image_file_url.length > 0) {
-        const imageElement = new Image();
-        imageElement.src = entry.image_file_url; // 画像URLを設定
-        imageElement.style.display = 'block'; // ブロック要素にする (img要素はデフォルトではインライン要素のため)
-        imageElement.style.marginTop = '1em'; // 画像上部の余白を設定
-        imageElement.style.maxHeight = '300px'; // 画像を表示する最大サイズ(縦)を設定
-        imageElement.style.maxWidth = '300px'; // 画像を表示する最大サイズ(横)を設定
-        entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement); // 本文エリアに画像を追加
+		console.log(entry.image_file_url)
+		for(let i = 0; i < entry.image_file_url.length; i++){
+			const imageElement = new Image();
+			imageElement.src = entry.image_file_url[i]; // 画像URLを設定
+			imageElement.style.display = 'block'; // ブロック要素にする (img要素はデフォルトではインライン要素のため)
+			imageElement.style.marginTop = '1em'; // 画像上部の余白を設定
+			imageElement.style.maxHeight = '300px'; // 画像を表示する最大サイズ(縦)を設定
+			imageElement.style.maxWidth = '300px'; // 画像を表示する最大サイズ(横)を設定
+			entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement); // 本文エリアに画像を追加
+		}
       }
 
       // 最後に実際の描画を行う
@@ -158,44 +162,60 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const file = imageInput.files[0];
-    if (!file.type.startsWith('image/')){ // 画像でなければスキップ
-      return;
-    }
+    const files = imageInput.files;
+	for(let i = 0; i < files.length; i ++){
+		if (!files[i].type.startsWith('image/')){ // 画像でなければスキップ
+			return;
+		}else if (imageInput.files.length > 4) {
+		  // 4枚より多い場合
+		  window.alert('投稿できるのは4枚までです。');
+		  imageInput.value = '';
+		  return;
+		}
+    
+		// 画像縮小処理
+		const test = document.getElementById("test"); // input追加用
+		var newInput = document.createElement("input"); // input要素作成
+		newInput.setAttribute("name", "image_base64[]");
+		newInput.setAttribute("type", "hidden");
+		newInput.multiple = true;
+		newInput.setAttribute('id', 'img' + i);
+		test.insertBefore(newInput, test.firstChild);
+		
+		const imagetest = document.getElementById("img" + i); // 追加したinput
+		
+		const canvas = document.getElementById("imageCanvas"); // 描画するcanvas
+		const reader = new FileReader();
+		const image = new Image();
+		reader.onload = () => { // ファイルの読み込み完了したら動く処理を指定
+		  image.onload = () => { // 画像として読み込み完了したら動く処理を指定
 
-    // 画像縮小処理
-    const imageBase64Input = document.getElementById("imageBase64Input"); // base64を送るようのinput
-    const canvas = document.getElementById("imageCanvas"); // 描画するcanvas
-    const reader = new FileReader();
-    const image = new Image();
-    reader.onload = () => { // ファイルの読み込み完了したら動く処理を指定
-      image.onload = () => { // 画像として読み込み完了したら動く処理を指定
+			// 元の縦横比を保ったまま縮小するサイズを決めてcanvasの縦横に指定する
+			const originalWidth = image.naturalWidth; // 元画像の横幅
+			const originalHeight = image.naturalHeight; // 元画像の高さ
+			const maxLength = 1000; // 横幅も高さも1000以下に縮小するものとする
+			if (originalWidth <= maxLength && originalHeight <= maxLength) { // どちらもmaxLength以下の場合そのまま
+				canvas.width = originalWidth;
+				canvas.height = originalHeight;
+			} else if (originalWidth > originalHeight) { // 横長画像の場合
+				canvas.width = maxLength;
+				canvas.height = maxLength * originalHeight / originalWidth;
+			} else { // 縦長画像の場合
+				canvas.width = maxLength * originalWidth / originalHeight;
+				canvas.height = maxLength;
+			}
 
-        // 元の縦横比を保ったまま縮小するサイズを決めてcanvasの縦横に指定する
-        const originalWidth = image.naturalWidth; // 元画像の横幅
-        const originalHeight = image.naturalHeight; // 元画像の高さ
-        const maxLength = 1000; // 横幅も高さも1000以下に縮小するものとする
-        if (originalWidth <= maxLength && originalHeight <= maxLength) { // どちらもmaxLength以下の場合そのまま
-            canvas.width = originalWidth;
-            canvas.height = originalHeight;
-        } else if (originalWidth > originalHeight) { // 横長画像の場合
-            canvas.width = maxLength;
-            canvas.height = maxLength * originalHeight / originalWidth;
-        } else { // 縦長画像の場合
-            canvas.width = maxLength * originalWidth / originalHeight;
-            canvas.height = maxLength;
-        }
+			// canvasに実際に画像を描画 (canvasはdisplay:noneで隠れているためわかりにくいが...)
+			const context = canvas.getContext("2d");
+			context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-        // canvasに実際に画像を描画 (canvasはdisplay:noneで隠れているためわかりにくいが...)
-        const context = canvas.getContext("2d");
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-        // canvasの内容をbase64に変換しinputのvalueに設定
-        imageBase64Input.value = canvas.toDataURL();
-      };
-      image.src = reader.result;
-    };
-    reader.readAsDataURL(file);
+			// canvasの内容をbase64に変換しinputのvalueに設定
+			imagetest.value = canvas.toDataURL();
+		  };
+		  image.src = reader.result;
+		};
+		reader.readAsDataURL(files[i]);
+	}
   });
 });
 </script>

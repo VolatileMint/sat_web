@@ -1,36 +1,34 @@
 CREATE TABLE `users` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `name` TEXT NOT NULL,
-    `email` TEXT NOT NULL,
-    `password` TEXT NOT NULL,
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `icon_filename` text COLLATE utf8mb4_unicode_ci,
+  `introduction` text COLLATE utf8mb4_unicode_ci,
+  `cover_filename` text COLLATE utf8mb4_unicode_ci,
+  `birthday` date DEFAULT NULL,
+  PRIMARY KEY (`id`)
 );
 
-ALTER TABLE `users` ADD COLUMN icon_filename TEXT DEFAULT NULL;
-
-ALTER TABLE `users` ADD COLUMN introduction TEXT DEFAULT NULL;
-
-ALTER TABLE `users` ADD COLUMN cover_filename TEXT DEFAULT NULL;
-
-ALTER TABLE `users` ADD COLUMN birthday DATE DEFAULT NULL;
-
 CREATE TABLE `user_relationships` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `follower_user_id` INT UNSIGNED NOT NULL,
-    `followee_user_id` INT UNSIGNED NOT NULL,
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `follower_user_id` int(10) unsigned NOT NULL,
+  `followee_user_id` int(10) unsigned NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
 );
 
 CREATE TABLE `bbs_entries` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT UNSIGNED NOT NULL,
-    `body` TEXT NOT NULL,
-    `image_filename` TEXT DEFAULT NULL,
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `body` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
 );
 
 CREATE TABLE `bbs_images` (
-    `id` INT NOT NULL,
-    `image_filename` TEXT DEFAULT NULL,
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+  `id` int(11) NOT NULL,
+  `image_filename` text COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 );
