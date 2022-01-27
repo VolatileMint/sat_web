@@ -90,75 +90,91 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
   </dd>
 </dl>
 <div id="entriesRenderArea"></div>
-
+<div id="fotter"></div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const entryTemplate = document.getElementById('entryTemplate');
-  const entriesRenderArea = document.getElementById('entriesRenderArea');
-
-  const request = new XMLHttpRequest();
-  request.onload = (event) => {
-    const response = event.target.response;
-    response.entries.forEach((entry) => {
-      // テンプレートとするものから要素をコピー
-      const entryCopied = entryTemplate.cloneNode(true);
-
-      // display: none を display: block に書き換える
-      entryCopied.style.display = 'block';
-
-      // id属性を設定しておく(レスアンカ用)
-      entryCopied.id = 'entry' + entry.id.toString();
-
-      // 番号(ID)を表示
-      entryCopied.querySelector('[data-role="entryIdArea"]').innerText = entry.id.toString();
-
-      // アイコン画像が存在する場合は表示 なければimg要素ごと非表示に
-	  if (entry.user_icon_file_url.length > 0) {
-        entryCopied.querySelector('[data-role="entryUserIconImage"]').src = entry.user_icon_file_url;
-      } else {
-        entryCopied.querySelector('[data-role="entryUserIconImage"]').display = 'none';
-      }
-
-      // 名前を表示
-      entryCopied.querySelector('[data-role="entryUserNameArea"]').innerText = entry.user_name;
-
-      // 名前のところのリンク先(プロフィール)のURLを設定
-      entryCopied.querySelector('[data-role="entryUserAnchor"]').href = entry.user_profile_url;
-
-      // 投稿日時を表示
-      entryCopied.querySelector('[data-role="entryCreatedAtArea"]').innerText = entry.created_at;
-
-      // 本文を表示 (ここはHTMLなのでinnerHTMLで)
-      entryCopied.querySelector('[data-role="entryBodyArea"]').innerHTML = entry.body;
-
-      // 画像が存在する場合に本文の下部に画像を表示
-      if (entry.image_file_url.length > 0) {
-		console.log(entry.image_file_url)
-		for(let i = 0; i < entry.image_file_url.length; i++){
-			const imageElement = new Image();
-			imageElement.src = entry.image_file_url[i]; // 画像URLを設定
-			imageElement.style.display = 'block'; // ブロック要素にする (img要素はデフォルトではインライン要素のため)
-			imageElement.style.marginTop = '1em'; // 画像上部の余白を設定
-			imageElement.style.maxHeight = '300px'; // 画像を表示する最大サイズ(縦)を設定
-			imageElement.style.maxWidth = '300px'; // 画像を表示する最大サイズ(横)を設定
-			entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement); // 本文エリアに画像を追加
+	const entryTemplate = document.getElementById('entryTemplate');
+	const entriesRenderArea = document.getElementById('entriesRenderArea');
+	
+	let count_num = 0;
+	const request = new XMLHttpRequest();
+	request.onload = (event) => {
+		const response = event.target.response;
+		response.entries.forEach((entry) => {
+			
+			// テンプレートとするものから要素をコピー
+			const entryCopied = entryTemplate.cloneNode(true);
+			// display: none を display: block に書き換える
+			entryCopied.style.display = 'block';
+			// id属性を設定しておく(レスアンカ用)
+			entryCopied.id = 'entry' + entry.id.toString();
+			// 番号(ID)を表示
+			entryCopied.querySelector('[data-role="entryIdArea"]').innerText = entry.id.toString();
+			// アイコン画像が存在する場合は表示 なければimg要素ごと非表示に
+			if (entry.user_icon_file_url.length > 0) {
+				entryCopied.querySelector('[data-role="entryUserIconImage"]').src = entry.user_icon_file_url;
+			} else {
+				entryCopied.querySelector('[data-role="entryUserIconImage"]').display = 'none';
+			}
+			// 名前を表示
+			entryCopied.querySelector('[data-role="entryUserNameArea"]').innerText = entry.user_name;
+			// 名前のところのリンク先(プロフィール)のURLを設定
+			entryCopied.querySelector('[data-role="entryUserAnchor"]').href = entry.user_profile_url;
+			// 投稿日時を表示
+			entryCopied.querySelector('[data-role="entryCreatedAtArea"]').innerText = entry.created_at;
+			// 本文を表示 (ここはHTMLなのでinnerHTMLで)
+			entryCopied.querySelector('[data-role="entryBodyArea"]').innerHTML = entry.body;
+			// 画像が存在する場合に本文の下部に画像を表示
+			if (entry.image_file_url.length > 0) {
+				console.log(entry.image_file_url)
+				for(let i = 0; i < entry.image_file_url.length; i++){
+					const imageElement = new Image();
+					imageElement.src = entry.image_file_url[i]; // 画像URLを設定
+					imageElement.style.display = 'block'; // ブロック要素にする (img要素はデフォルトではインライン要素のため)
+					imageElement.style.marginTop = '1em'; // 画像上部の余白を設定
+					imageElement.style.maxHeight = '300px'; // 画像を表示する最大サイズ(縦)を設定
+					imageElement.style.maxWidth = '300px'; // 画像を表示する最大サイズ(横)を設定
+					entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement); // 本文エリアに画像を追加
+				}
+			}
+			count_num++ // 表示回数を記録
+			// 最後に実際の描画を行う
+			entriesRenderArea.appendChild(entryCopied);
+		});
+	}
+	request.open('GET', `/test_json.php?read=${count_num}`, true); // timeline_json.php を叩く
+	request.responseType = 'json';
+	request.send();
+	
+	document.addEventListener('scroll', () => {
+		try {
+			let children = entriesRenderArea.children
+			let {top, height} = children[children.length - 1].getBoundingClientRect()
+			let execution_flag = false // 処理中にeventを重ねさせないためのフラグ
+			if (top + height <= window.innerHeight && !execution_flag) {
+				execution_flag = true
+				request.open('GET', `/test_json.php?read=${count_num}`, true); // timeline_json.php を叩く
+				request.responseType = 'json';
+				request.send();
+				
+				execution_flag = false
+			}
+			
+		} catch (e) {
+			console.error(e)
 		}
-      }
-
-      // 最後に実際の描画を行う
-      entriesRenderArea.appendChild(entryCopied);
-    });
-  }
-  request.open('GET', '/timeline_json.php', true); // timeline_json.php を叩く
-  request.responseType = 'json';
-  request.send();
-
-
+	}, {passive: true})
+	
   // 以下画像縮小用
   const imageInput = document.getElementById("imageInput");
   imageInput.addEventListener("change", () => {
     if (imageInput.files.length < 1) {
       // 未選択の場合
+      return;
+    }else if (imageInput.files.length > 4) {
+      // 4枚より多い場合
+	  window.alert('投稿できるのは4枚までです。');
+	  imageInput.value = '';
       return;
     }
 
@@ -166,13 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	for(let i = 0; i < files.length; i ++){
 		if (!files[i].type.startsWith('image/')){ // 画像でなければスキップ
 			return;
-		}else if (imageInput.files.length > 4) {
-		  // 4枚より多い場合
-		  window.alert('投稿できるのは4枚までです。');
-		  imageInput.value = '';
-		  return;
 		}
-    
 		// 画像縮小処理
 		const test = document.getElementById("test"); // input追加用
 		var newInput = document.createElement("input"); // input要素作成
@@ -215,6 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		  image.src = reader.result;
 		};
 		reader.readAsDataURL(files[i]);
+	
 	}
   });
 });

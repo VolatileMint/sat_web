@@ -8,25 +8,14 @@ if (empty($_SESSION['login_user_id'])) { // 非ログインの場合利用不可
   return;
 }
 
-// WHERE句を変数として持っておく
-$where = 'bbs_entries.user_id IN (SELECT followee_user_id FROM user_relationships WHERE follower_user_id = :login_user_id) OR bbs_entries.user_id = :login_user_id';
-//バインドする値をハッシュ配列で持っておく
-$bind　= [];
-$bind[':login_user_id'] = $_SESSION['login_user_id'];
+$read_num = 0;
 
-/*
-$read_id = null;
-// 最終読み込み番号があった場合、
+//
 if($_SERVER["REQUEST_METHOD"] === "GET"){
-	// 一応のvaridate
-	
-	$read_id = $_GET["read"]) === "integer"){
-		$read_id = $_GET["read"];
-		$where .= ' AND bbs_entries.id < :read_id';
-		$bind[':read_id'] = $read_id;
+	if(preg_match('/^[0-9]+/u', $_GET['read'])){ // validate(数字のみ)
+		$read_num = $_GET['read'];
 	}
 }
-*/
 
 // 現在のログイン情報を取得する
 $user_select_sth = $dbh->prepare("SELECT * from users WHERE id = :id");
@@ -36,15 +25,17 @@ $user = $user_select_sth->fetch();
 $sql = 'SELECT bbs_entries.*, users.name AS user_name, users.icon_filename AS user_icon_filename'
   . ' FROM bbs_entries'
   . ' INNER JOIN users ON bbs_entries.user_id = users.id'
-  . ' WHERE '
-  . $where
+  . ' WHERE'
+  . '   bbs_entries.user_id IN'
+  . '   (SELECT followee_user_id FROM user_relationships WHERE follower_user_id = :login_user_id)'
+  . '   OR bbs_entries.user_id = :login_user_id'
   . ' ORDER BY bbs_entries.created_at DESC'
-  . ' LIMIT 10';
+  . ' LIMIT 10 OFFSET ' . $read_num;
 $select_sth = $dbh->prepare($sql);
-// バインド
-$select_sth->execute($bind);
+$select_sth->execute([':login_user_id' => $_SESSION['login_user_id']]);
 $list = $select_sth->fetchAll(\PDO::FETCH_ASSOC);
-//
+
+// 画像の追加
 $sql = 'SELECT image_filename FROM bbs_images 
 		WHERE id = :id';
 $select_img = $dbh->prepare($sql);

@@ -7,6 +7,16 @@ if (empty($_SESSION['login_user_id'])) { // 非ログインの場合利用不可
   print(json_encode(['entries' => []]));
   return;
 }
+
+$read_num = 0;
+
+//
+if($_SERVER["REQUEST_METHOD"] === "GET"){
+	if(preg_match('/^[0-9]+/u', $_GET['read'])){ // validate(数字のみ)
+		$read_num = $_GET['read'];
+	}
+}
+
 // 現在のログイン情報を取得する
 $user_select_sth = $dbh->prepare("SELECT * from users WHERE id = :id");
 $user_select_sth->execute([':id' => $_SESSION['login_user_id']]);
@@ -17,15 +27,15 @@ $sql = 'SELECT bbs_entries.*, users.name AS user_name, users.icon_filename AS us
   . ' INNER JOIN users ON bbs_entries.user_id = users.id'
   . ' WHERE'
   . '   bbs_entries.user_id IN'
-  . '     (SELECT followee_user_id FROM user_relationships WHERE follower_user_id = :login_user_id)'
+  . '   (SELECT followee_user_id FROM user_relationships WHERE follower_user_id = :login_user_id)'
   . '   OR bbs_entries.user_id = :login_user_id'
-  . ' ORDER BY bbs_entries.created_at DESC';
+  . ' ORDER BY bbs_entries.created_at DESC'
+  . ' LIMIT 10 OFFSET ' . $read_num;
 $select_sth = $dbh->prepare($sql);
-$select_sth->execute([
-  ':login_user_id' => $_SESSION['login_user_id'],
-]);
+$select_sth->execute([':login_user_id' => $_SESSION['login_user_id']]);
 $list = $select_sth->fetchAll(\PDO::FETCH_ASSOC);
-//
+
+// 画像の追加
 $sql = 'SELECT image_filename FROM bbs_images 
 		WHERE id = :id';
 $select_img = $dbh->prepare($sql);
@@ -44,7 +54,6 @@ foreach($list as $k => $v){
 	$v['images'] = $data;
 	$list[$k] = $v;
 }
-//var_dump($list);
 // bodyのHTMLを出力するための関数を用意する
 function bodyFilter (string $body): string
 {

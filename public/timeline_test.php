@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const entryTemplate = document.getElementById('entryTemplate');
 	const entriesRenderArea = document.getElementById('entriesRenderArea');
 	
-	let count_id = 0;
+	let count_num = 0;
 	const request = new XMLHttpRequest();
 	request.onload = (event) => {
 		const response = event.target.response;
@@ -137,12 +137,12 @@ document.addEventListener("DOMContentLoaded", () => {
 					entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement); // 本文エリアに画像を追加
 				}
 			}
-			count_id = entry.id // 最後のentry_idを保存しておく
+			count_num++ // 表示回数を記録
 			// 最後に実際の描画を行う
 			entriesRenderArea.appendChild(entryCopied);
 		});
 	}
-	request.open('GET', '/test_json.php', true); // timeline_json.php を叩く
+	request.open('GET', `/test_json.php?read=${count_num}`, true); // timeline_json.php を叩く
 	request.responseType = 'json';
 	request.send();
 	
@@ -153,8 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			let execution_flag = false // 処理中にeventを重ねさせないためのフラグ
 			if (top + height <= window.innerHeight && !execution_flag) {
 				execution_flag = true
-				console.log(`/test_json.php?read=${count_id}`);
-				request.open('GET', `/test_json.php?read=${count_id}`, true); // timeline_json.php を叩く
+				request.open('GET', `/test_json.php?read=${count_num}`, true); // timeline_json.php を叩く
 				request.responseType = 'json';
 				request.send();
 				
