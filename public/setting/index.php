@@ -1,7 +1,6 @@
 <?php
 // DBに接続
 $dbh = new PDO('mysql:host=mysql;dbname=techc', 'root', '');
-
 session_start();
 if (empty($_SESSION['login_user_id'])) { // 非ログインの場合利用不可
   header("HTTP/1.1 302 Found");

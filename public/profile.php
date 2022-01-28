@@ -2,6 +2,12 @@
 // DBに接続
 $dbh = new PDO('mysql:host=mysql;dbname=techc', 'root', '');
 
+session_start();
+if (empty($_SESSION['login_user_id'])) { // 非ログインの場合利用不可
+  header("HTTP/1.1 302 Found");
+  header("Location: /login.php");
+  return;
+}
 $user = null;
 if (!empty($_GET['user_id'])) {
   $user_id = $_GET['user_id'];
@@ -54,7 +60,6 @@ foreach($list as $k => $v){
 
 // フォロー状態を取得
 $relationship = null;
-session_start();
 if (!empty($_SESSION['login_user_id'])) { // ログインしている場合
   // フォロー状態をDBから取得
   $select_sth = $dbh->prepare(
