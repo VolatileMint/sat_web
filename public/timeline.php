@@ -46,7 +46,7 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
   // 処理が終わったらリダイレクトする
   // リダイレクトしないと，リロード時にまた同じ内容でPOSTすることになる
   header("HTTP/1.1 302 Found");
-  header("Location: ./timeline_test.php");
+  header("Location: ./timeline.php");
   return;
 }
 ?>
@@ -61,7 +61,7 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
 </div>
 
 <!-- フォームのPOST先はこのファイル自身にする -->
-<form method="POST" action="./timeline_test.php"><!-- enctypeは外しておきましょう -->
+<form method="POST" action="./timeline.php"><!-- enctypeは外しておきましょう -->
   <textarea name="body" required></textarea>
   <div style="margin: 1em 0;">
     <input type="file" accept="image/*" name="image[]" multiple id="imageInput">
@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			entriesRenderArea.appendChild(entryCopied);
 		});
 	}
-	request.open('GET', `/test_json.php?read=${count_num}`, true); // timeline_json.php を叩く
+	request.open('GET', `/timeline_json.php?read=${count_num}`, true); // timeline_json.php を叩く
 	request.responseType = 'json';
 	request.send();
 	
@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			let execution_flag = false // 処理中にeventを重ねさせないためのフラグ
 			if (top + height <= window.innerHeight && !execution_flag) {
 				execution_flag = true
-				request.open('GET', `/test_json.php?read=${count_num}`, true); // timeline_json.php を叩く
+				request.open('GET', `/timeline_json.php?read=${count_num}`, true); // timeline_json.php を叩く
 				request.responseType = 'json';
 				request.send();
 				

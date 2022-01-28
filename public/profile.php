@@ -88,7 +88,7 @@ if (!empty($_SESSION['login_user_id'])) { // ログインしている場合
 <h1><?= htmlspecialchars($user['name']) ?> さん のプロフィール</h1>
 <div class="profile" style="width: 100%; height:15em;  padding:1em;
     <?php if(!empty($user['cover_filename'])): ?>
-		background-image: url('/image/<?= $user['cover_filename'] ?>'); 
+		background-image: url('/image/<?= nl2br(htmlspecialchars($user['cover_filename'])) ?>'); 
 		background-size:cover;
     <?php endif; ?>">
 	<div class="line" style="overflow: hidden; margin-bottom: 10px;">
@@ -102,7 +102,7 @@ if (!empty($_SESSION['login_user_id'])) { // ログインしている場合
 				border: 3px solid white; float: left; margin-right:1em;">
 			</div>
 		  <?php else: ?>
-		  <img src="/image/<?= $user['icon_filename'] ?>"
+		  <img src="/image/<?= nl2br(htmlspecialchars($user['icon_filename'])) ?>"
 			style="height: 5em; width: 5em; border-radius: 50%; object-fit: cover;border: 3px solid white; float: left; margin-right:1em;">
 		  <?php endif; ?>
 		</div>

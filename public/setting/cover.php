@@ -59,7 +59,7 @@ if (isset($_POST['image_base64'])) {
 <h1>カバーの変更</h1>
 <div class="profile"　id="cover" style="width: 100%; height:15em;  padding:1em;
     <?php if(!empty($user['cover_filename'])): ?>
-		background-image: url('/image/<?= $user['cover_filename'] ?>'); 
+		background-image: url('/image/<?= nl2br(htmlspecialchars($user['cover_filename'])) ?>'); 
 		background-size:cover;
     <?php endif; ?>">
 	<div class="line" style="overflow: hidden; margin-bottom: 10px;">

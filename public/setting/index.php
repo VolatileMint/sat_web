@@ -48,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   $update_sth->execute();
   // 成功したら成功したことを示すクエリパラメータつきのURLにリダイレクト
   header("HTTP/1.1 302 Found");
-  header("Location: ./index_test.php?success=1");
+  header("Location: ./index.php?success=1");
   return;
 }
 
@@ -60,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <h1>現在のプロフィール</h1>
 <div class="profile" style="width: 100%; height:15em;  padding:1em;
     <?php if(!empty($user['cover_filename'])): ?>
-		background-image: url('/image/<?= $user['cover_filename'] ?>'); 
+		background-image: url('/image/<?= nl2br(htmlspecialchars($user['cover_filename'])) ?>'); 
 		background-size:cover;
     <?php endif; ?>">
 	<div class="line" style="overflow: hidden; margin-bottom: 10px;">
