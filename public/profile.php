@@ -30,6 +30,27 @@ $entries_select_sth = $dbh->prepare(
 $entries_select_sth->execute([
   ':user_id' => $user_id,
 ]);
+$list = $entries_select_sth->fetchAll(\PDO::FETCH_ASSOC);
+
+// 画像の追加
+$sql = 'SELECT image_filename FROM bbs_images 
+		WHERE id = :id';
+$select_img = $dbh->prepare($sql);
+
+foreach($list as $k => $v){
+	$select_img->execute([':id' => $v['id'],]);
+	$datum = $select_img->fetchAll(PDO::FETCH_ASSOC); //PDO::FETCH_ASSOC(重複表示を省く);
+	if(false === $datum){
+		return null;
+	}
+	$image = array_column($datum, 'image_filename');
+	$data = [];
+	foreach($image as $i){
+		$data[] = '/image/' . $i;
+	}
+	$v['images'] = $data;
+	$list[$k] = $v;
+}
 
 // フォロー状態を取得
 $relationship = null;
@@ -64,75 +85,81 @@ if (!empty($_SESSION['login_user_id'])) { // ログインしている場合
 ?>
 <a href="/timeline.php">タイムラインに戻る</a>
 
-<div style="
-    width: 100%; height: 15em;
-    <?php if(!empty($user['cover_filename'])): ?>
-    background: url('/image/<?= $user['cover_filename'] ?>') center;
-    <?php endif; ?>
-  ">
-</div>
-
 <h1><?= htmlspecialchars($user['name']) ?> さん のプロフィール</h1>
-
-<div>
-  <?php if(empty($user['icon_filename'])): ?>
-  現在未設定
-  <?php else: ?>
-  <img src="/image/<?= $user['icon_filename'] ?>"
-    style="height: 5em; width: 5em; border-radius: 50%; object-fit: cover;">
-  <?php endif; ?>
+<div class="profile" style="width: 100%; height:15em;  padding:1em;
+    <?php if(!empty($user['cover_filename'])): ?>
+		background-image: url('/image/<?= $user['cover_filename'] ?>'); 
+		background-size:cover;
+    <?php endif; ?>">
+	<div class="line" style="overflow: hidden; margin-bottom: 10px;">
+		<div class="icon">
+		  <?php if(empty($user['icon_filename'])): ?>
+			<div class="perfect-circle" style="width: 5em;
+				height: 5em;
+				border-radius: 50%;
+				background: gray;
+				object-fit: cover;
+				border: 3px solid white; float: left; margin-right:1em;">
+			</div>
+		  <?php else: ?>
+		  <img src="/image/<?= $user['icon_filename'] ?>"
+			style="height: 5em; width: 5em; border-radius: 50%; object-fit: cover;border: 3px solid white; float: left; margin-right:1em;">
+		  <?php endif; ?>
+		</div>
+		<div class="name">
+			<h1><?= htmlspecialchars($user['name']) ?></h1>
+		</div>
+	</div>
+	<div class="textarea" style="background-color: rgba(255,255,255,0.8); width:40em; height: 8em; padding:5px 15px;">
+		<?php if(!empty($user['birthday'])): ?>
+			<?php
+			  $birthday = DateTime::createFromFormat('Y-m-d', $user['birthday']);
+			  $today = new DateTime('now');
+			?>
+			  <p><?= $today->diff($birthday)->y . "歳(" . date('n月j日', strtotime($user['birthday'])) . "生まれ)"?></p>
+		<?php endif; ?>
+		<p><?= nl2br(htmlspecialchars($user['introduction'])) ?></p>
+	</div>
 </div>
-
 <?php if($user['id'] === $_SESSION['login_user_id']): ?>
-<div style="margin: 1em 0;">
-  これはあなたです！<br>
-  <a href="/setting/index.php">設定画面はこちら</a>
-</div>
-<?php else: ?>
-<div style="margin: 1em 0;">
-  <?php if(empty($relationship)): // フォローしていない場合 ?>
-  <div>
-    <a href="./follow.php?followee_user_id=<?= $user['id'] ?>">フォローする</a>
-  </div>
-  <?php else: // フォローしている場合 ?>
-  <div>
-    <?= $relationship['created_at'] ?> にフォローしました。
-  </div>
-  <?php endif; ?>
+	<div style="margin: 1em 0;">
+	  これはあなたです！<br>
+	  <a href="/setting/index.php">設定画面はこちら</a>
+	</div>
+	<?php else: ?>
+	<div style="margin: 1em 0;">
+	  <?php if(empty($relationship)): // フォローしていない場合 ?>
+	  <div>
+		<a href="./follow.php?followee_user_id=<?= $user['id'] ?>">フォローする</a>
+	  </div>
+	  <?php else: // フォローしている場合 ?>
+	  <div>
+		<?= $relationship['created_at'] ?> にフォローしました。
+	  </div>
+	  <?php endif; ?>
 
-  <?php if(!empty($follower_relationship)): // フォローされている場合 ?>
-  <div>
-    フォローされています。
-  </div>
-  <?php endif; ?>
-</div>
+	  <?php if(!empty($follower_relationship)): // フォローされている場合 ?>
+	  <div>
+		フォローされています。
+	  </div>
+	  <?php endif; ?>
+	</div>
 <?php endif; ?>
-
-<?php if(!empty($user['birthday'])): ?>
-<?php
-  $birthday = DateTime::createFromFormat('Y-m-d', $user['birthday']);
-  $today = new DateTime('now');
-?>
-  <?= $today->diff($birthday)->y ?>歳
-<?php endif; ?>
-
-<div>
-  <?= nl2br(htmlspecialchars($user['introduction'])) ?>
-</div>
-
 <hr>
 
 
-<?php foreach($entries_select_sth as $entry): ?>
+<?php foreach($list as $entry): ?>
   <dl style="margin-bottom: 1em; padding-bottom: 1em; border-bottom: 1px solid #ccc;">
     <dt>日時</dt>
     <dd><?= $entry['created_at'] ?></dd>
     <dt>内容</dt>
     <dd>
       <?= htmlspecialchars($entry['body']) ?>
-      <?php if(!empty($entry['image_filename'])): ?>
+      <?php if(!empty($entry['images'])): ?>
       <div>
-        <img src="/image/<?= $entry['image_filename'] ?>" style="max-height: 10em;">
+		<?php foreach($entry['images'] as $img):?>
+			<img src="<?= $img ?>" style="max-height: 10em;">
+		<? endforeach ?>
       </div>
       <?php endif; ?>
     </dd>
