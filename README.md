@@ -22,7 +22,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 ### ソースコードの設置
 ```
-git@github.com:VolatileMint/sat_web.git
+git clone git@github.com:VolatileMint/sat_web.git
 ```
 
 ### ビルドと起動
