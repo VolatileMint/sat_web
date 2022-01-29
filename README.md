@@ -37,6 +37,7 @@ docker-compose 起動中に以下のコマンドでMySQLのCLIクライアント
 docker exec -it mysql mysql techc
 ```
 テーブルを作成するSQLは以下の通りです。
+
 ユーザー情報テーブル
 ```
 CREATE TABLE `users` (
